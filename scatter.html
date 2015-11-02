@@ -86,7 +86,7 @@ var svg = d3.select("body").append("svg")
 
 svg.call(tip);
 
-d3.json("d3_data_v2.json", function(error, data) {
+d3.json("d3_data.json", function(error, data) {
 
   data.forEach(function(d) {
     d.COSTT4_A_scaled = +d.COSTT4_A_scaled;
