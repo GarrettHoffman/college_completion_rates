@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+body {
+  font: 10px sans-serif;
+}
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+.dot {
+  stroke: #000;
+}
+
+.d3-tip {
+  line-height: 1;
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+}
+
+/* Creates a small triangle extender for the tooltip */
+.d3-tip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
+
+/* Style northward tooltips differently */
+.d3-tip.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
+</style>
+<head>
+    <title>College Completion Rate Scatter</title>
+</head>
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+<script>
+var margin = {top: 55, right: 20, bottom: 30, left: 40},
+    width = 1236 - margin.left - margin.right,
+    height = 660 - margin.top - margin.bottom;
+
+var x = d3.scale.linear()
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var color = d3.scale.ordinal()
+    .domain(["Above Average", "Below Average"])
+    .range(["#1f77b4", "#d62728"]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([-10, 0])
+  .html(function(d) {
+    return "<strong>Name:</strong> <span style='color:#848484'>" + d.INSTNM + "</span>" + "<br>" + "<strong>Year:</strong> <span style='color:#848484'>" + d.Year + "</span>" + "<br>" + "<strong>Avg. Ann Cost:</strong> <span style='color:#848484'>" + d.COSTT4_A + "</span>" + "<br>" + "<strong>% Low Income:</strong> <span style='color:#848484'>" + d.INC_PCT_LO_rounded + "</span>" + "<br>" + "<strong>Completion %:</strong> <span style='color:#848484'>" + d.C150_4_rounded + "</span>";
+  })
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+svg.call(tip);
+
+d3.json("d3_data_v2.json", function(error, data) {
+
+  data.forEach(function(d) {
+    d.COSTT4_A_scaled = +d.COSTT4_A_scaled;
+    d.INC_PCT_LO_scaled = +d.INC_PCT_LO_scaled;
+  });
+  x.domain(d3.extent(data, function(d) { return d.COSTT4_A_scaled; })).nice();
+  y.domain(d3.extent(data, function(d) { return d.INC_PCT_LO_scaled; })).nice();
+
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("x", width)
+      .attr("y", -6)
+      .style("text-anchor", "end")
+      .text("Average Annual Cost (scaled)");
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("% of Student from Low Income Family (scaled)")
+
+  svg.selectAll(".dot")
+      .data(data)
+    .enter().append("circle")
+      .attr("class", "dot")
+      .attr("r", function(d) { return d.C150_4 * 10; })
+      .attr("cx", function(d) { return x(d.COSTT4_A_scaled); })
+      .attr("cy", function(d) { return y(d.INC_PCT_LO_scaled); })
+      .style("fill", function(d) { return color(d.completion_class); });
+
+  var legend = svg.selectAll(".legend")
+      .data(color.domain())
+    .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+  
+  legend.append("rect")
+      .attr("x", width - 18)
+      .attr("width", 18)
+      .attr("height", 18)
+      .style("fill", color);
+  
+  legend.append("text")
+      .attr("x", width - 24)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+      .style("text-anchor", "end")
+      .text(function(d) { return d; });
+
+d3.selection.prototype.moveToFront = function() {
+  return this.each(function(){
+    this.parentNode.appendChild(this);
+  });
+};
+
+d3.selection.prototype.moveToBack = function() { 
+    return this.each(function() { 
+        var firstChild = this.parentNode.firstChild; 
+        if (firstChild) { 
+            this.parentNode.insertBefore(this, firstChild); 
+        } 
+    }); 
+};
+
+function moveForward() { 
+  var sel = d3.select(this);
+  sel.moveToFront();
+}
+
+function moveBack() { 
+  var sel = d3.select(this);
+  sel.moveToBack();
+}
+
+function getData() {
+          d3.select(this)
+            .transition()
+            .duration(2000)
+            .ease("elastic")
+            .attr("r", 25);
+        }
+
+function normalSize() {
+          d3.select(this)
+            .transition()
+            .duration(2000)
+            .ease("elastic")
+            .attr("r", function(d) { return d.C150_4 * 10; });
+        }
+
+        d3.selectAll("circle").on("mouseover", function(d) {
+                    getData.call(this, d);
+                    moveForward.call(this, d);
+                    tip.show(d);
+});
+        d3.selectAll("circle").on("mouseout", function(d) {
+                    normalSize.call(this, d);
+                    moveBack.call(this, d);
+                    tip.hide(d);
+});                                         
+});
+</script>
